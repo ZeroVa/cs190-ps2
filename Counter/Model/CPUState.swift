@@ -112,7 +112,80 @@ class CPUState {
     // Make use of the enums RegisterASpecialValues and RegisterBSpecialValues so that you don't have to hard
     // code "2" to mean a decimal point (similarly for the other special values).
     func canonicalize() {
-        let registerC = Register(fromDecimalString: "01000000000002")
+        let registerA = registers[RegId.A.rawValue]
+        let registerB = registers[RegId.B.rawValue]
+        var registerC = Register()
+        let decoder:DisplayDecoder = DisplayDecoder()
+        var tempRegister = decoder.getDisplayableCharacters(registerA, registerB: registerB);
+        var idxC = 13
+        var isNegative:Bool = false
+        var exponentIsNegative:Bool = false
+        
+        //Check if A is positive or negative; set first nibble on Register C accordingly.
+        if registerA.nibbles[13] == RegisterASpecialValues.Minus.rawValue {
+            registerC.setNibble(idxC, value: RegisterASpecialValues.Minus.rawValue)
+            isNegative = true
+        }
+        else{
+            registerC.setNibble(idxC, value: 0)
+        }
+        idxC--;
+        
+        
+        
+        //Strip leading zeroes and copy main number from Register A to Register C
+        var leadingZerosGone:Bool = false
+        var middleCounter:Int = 12
+        while middleCounter > 2 {
+            
+            if registerA.nibbles[middleCounter] != 0 && !leadingZerosGone {
+                leadingZerosGone = true
+            }
+            
+            if(leadingZerosGone){
+                registerC.setNibble(idxC, value: registerA.nibbles[middleCounter])
+                idxC--;
+            }
+            
+            middleCounter--
+            
+        }
+        
+        //Fill in any missing spaces with zeroes
+        while idxC > 2{
+            registerC.setNibble(idxC, value: 0)
+            idxC--
+        }
+        
+        //At this point we have a correct representation of registers 14 to 3
+        
+        let exponentOfAIsNegative = (registerA.nibbles[2] == RegisterASpecialValues.Minus.rawValue ? -1 : 1)
+        var exponentFromA = Int(nibbleFromCharacter(tempRegister[13].rawValue)*10)
+        exponentFromA += Int(nibbleFromCharacter(tempRegister[14].rawValue))
+        exponentFromA *= exponentOfAIsNegative
+        
+        var rawNumber:String = ""
+        for m in 1...11 {
+            rawNumber.append(tempRegister[m].rawValue)
+        }
+        let legitNumber = (rawNumber as NSString).floatValue
+        let displayExponent = Int(log10(legitNumber))
+        var finalExponent = exponentFromA + displayExponent
+        
+        if finalExponent > 99 { overflow(!isNegative) }
+        else if finalExponent < -99 { underflow() }
+        
+        if(finalExponent<0){
+            exponentIsNegative = true
+            finalExponent += 100
+        }
+        
+        //At this point, we have the main number, whether it is positive or negative, the exponent, in its proper form, and whether it is positive or negative.
+        
+        registerC.setNibble(2, value: (exponentIsNegative ? RegisterASpecialValues.Minus.rawValue : 0 ) )
+        registerC.setNibble(1, value: Nibble(finalExponent/10))
+        registerC.setNibble(0, value: Nibble(finalExponent%10))
+        
         registers[RegId.C.rawValue] = registerC
     }
     
