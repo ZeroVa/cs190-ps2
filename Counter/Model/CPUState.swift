@@ -115,8 +115,7 @@ class CPUState {
         let registerA = registers[RegId.A.rawValue]
         let registerB = registers[RegId.B.rawValue]
         var registerC = Register()
-        let decoder:DisplayDecoder = DisplayDecoder()
-        var tempRegister = decoder.getDisplayableCharacters(registerA, registerB: registerB);
+        var tempRegister = DisplayDecoder().getDisplayableCharacters(registerA, registerB: registerB);
         var idxC = 13
         var isNegative:Bool = false
         var exponentIsNegative:Bool = false
@@ -157,7 +156,7 @@ class CPUState {
             idxC--
         }
         
-        //At this point we have a correct representation of registers 14 to 3
+        //At this point we have a correct representation of registers 13 to 3
         
         let exponentOfAIsNegative = (registerA.nibbles[2] == RegisterASpecialValues.Minus.rawValue ? -1 : 1)
         var exponentFromA = Int(nibbleFromCharacter(tempRegister[13].rawValue)*10)
