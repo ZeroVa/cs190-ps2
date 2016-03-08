@@ -159,16 +159,25 @@ class CPUState {
         //At this point we have a correct representation of registers 13 to 3
         
         let exponentOfAIsNegative = (registerA.nibbles[2] == RegisterASpecialValues.Minus.rawValue ? -1 : 1)
-        var exponentFromA = Int(nibbleFromCharacter(tempRegister[13].rawValue)*10)
-        exponentFromA += Int(nibbleFromCharacter(tempRegister[14].rawValue))
+        
+        var exponentFromA:Int = 0;
+        if(tempRegister[13].rawValue != DisplayableCharacters.Blank.rawValue){
+            exponentFromA+=Int(nibbleFromCharacter(tempRegister[13].rawValue)*10);
+        }
+        if(tempRegister[14].rawValue != DisplayableCharacters.Blank.rawValue){
+            exponentFromA += Int(nibbleFromCharacter(tempRegister[14].rawValue))
+        }
         exponentFromA *= exponentOfAIsNegative
         
         var rawNumber:String = ""
         for m in 1...11 {
             rawNumber.append(tempRegister[m].rawValue)
         }
+        var displayExponent = 0
         let legitNumber = (rawNumber as NSString).floatValue
-        let displayExponent = Int(log10(legitNumber))
+        if(legitNumber != 0 ){
+            displayExponent = Int(log10(legitNumber))
+        }
         var finalExponent = exponentFromA + displayExponent
         
         if finalExponent > 99 { overflow(!isNegative) }
